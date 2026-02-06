@@ -141,7 +141,17 @@ async function scanMedia(type) {
   button.disabled = true;
   button.textContent = 'Scanning...';
   
-  const result = await ipcRenderer.invoke('scan-media', type);
+  // Get the checkbox state for thumbnails
+  let createThumbnails = false;
+  if (type === 'movies') {
+    createThumbnails = document.getElementById('createMovieThumbnails')?.checked || false;
+  } else if (type === 'tv') {
+    createThumbnails = document.getElementById('createTVThumbnails')?.checked || false;
+  } else if (type === 'music') {
+    createThumbnails = document.getElementById('createMusicThumbnails')?.checked || false;
+  }
+  
+  const result = await ipcRenderer.invoke('scan-media', type, createThumbnails);
   
   button.disabled = false;
   button.textContent = `Scan ${type === 'tv' ? 'TV Shows' : type.charAt(0).toUpperCase() + type.slice(1)}`;

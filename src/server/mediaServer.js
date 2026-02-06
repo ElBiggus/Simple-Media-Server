@@ -111,6 +111,16 @@ class MediaServer {
       }
     });
 
+    // Serve thumbnails
+    this.app.get('/thumbnails/:filename', (req, res) => {
+      const thumbnailPath = path.join(process.cwd(), 'data', 'thumbnails', req.params.filename);
+      if (fs.existsSync(thumbnailPath)) {
+        res.sendFile(thumbnailPath);
+      } else {
+        res.status(404).send('Thumbnail not found');
+      }
+    });
+
     // Serve web interface
     this.app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, '../web/index.html'));
@@ -166,13 +176,13 @@ class MediaServer {
     return this.port;
   }
 
-  async scanMedia(type) {
+  async scanMedia(type, createThumbnails = false) {
     if (type === 'movies') {
-      return await this.scanner.scanMovies();
+      return await this.scanner.scanMovies(createThumbnails);
     } else if (type === 'tv') {
-      return await this.scanner.scanTV();
+      return await this.scanner.scanTV(createThumbnails);
     } else if (type === 'music') {
-      return await this.scanner.scanMusic();
+      return await this.scanner.scanMusic(createThumbnails);
     }
   }
 }

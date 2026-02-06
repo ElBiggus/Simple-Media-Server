@@ -168,15 +168,21 @@ function renderMovies(movies) {
     return;
   }
   
-  grid.innerHTML = movies.map(movie => `
-    <div class="card" onclick="router.navigate('/movie/${movie.id}')">
-      <div class="card-image">🎬</div>
-      <div class="card-content">
-        <div class="card-title">${movie.title}</div>
-        <div class="card-subtitle">${movie.year || 'Year Unknown'}</div>
+  grid.innerHTML = movies.map(movie => {
+    const thumbnailSrc = movie.thumbnail ? `/thumbnails/${movie.thumbnail}` : null;
+    const imageContent = thumbnailSrc 
+      ? `<img src="${thumbnailSrc}" alt="${movie.title}" style="width: 100%; height: 100%; object-fit: cover;">` 
+      : '🎬';
+    return `
+      <div class="card" onclick="router.navigate('/movie/${movie.id}')">
+        <div class="card-image">${imageContent}</div>
+        <div class="card-content">
+          <div class="card-title">${movie.title}</div>
+          <div class="card-subtitle">${movie.year || 'Year Unknown'}</div>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function sortMovies() {
@@ -211,7 +217,7 @@ router.addRoute('/movie/:id', async (params) => {
       <a href="/movies" class="back-btn" onclick="route(event, '/movies')">← Back to Movies</a>
       <div class="detail-view">
         <div class="detail-header">
-          <div class="detail-poster">🎬</div>
+          <div class="detail-poster">${movie.thumbnail ? `<img src="/thumbnails/${movie.thumbnail}" alt="${movie.title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">` : '🎬'}</div>
           <div class="detail-info">
             <h2>${movie.title}</h2>
             <p>${movie.year ? `Released: ${movie.year}` : 'Release date unknown'}</p>
@@ -282,9 +288,13 @@ router.addRoute('/tv', async () => {
   
   grid.innerHTML = shows.map(show => {
     const episodeCount = show.seasons.reduce((sum, s) => s.episodes.length + sum, 0);
+    const thumbnailSrc = show.thumbnail ? `/thumbnails/${show.thumbnail}` : null;
+    const imageContent = thumbnailSrc 
+      ? `<img src="${thumbnailSrc}" alt="${show.name}" style="width: 100%; height: 100%; object-fit: cover;">` 
+      : '📺';
     return `
       <div class="card" onclick="router.navigate('/tv/${show.id}')">
-        <div class="card-image">📺</div>
+        <div class="card-image">${imageContent}</div>
         <div class="card-content">
           <div class="card-title">${show.name}</div>
           <div class="card-subtitle">${show.seasons.length} Seasons • ${episodeCount} Episodes</div>
@@ -310,15 +320,24 @@ router.addRoute('/tv/:showId', async (params) => {
       <div class="detail-view">
         <h2>${show.name}</h2>
         <ul class="season-list">
-          ${show.seasons.map(season => `
-            <li class="season-item" onclick="router.navigate('/tv/${show.id}/season/${season.number}')">
-              <div>
-                <strong>Season ${season.number}</strong>
-                <span style="color: #888; margin-left: 15px;">${season.episodes.length} episodes</span>
-              </div>
-              <span>→</span>
-            </li>
-          `).join('')}
+          ${show.seasons.map(season => {
+            const thumbnailSrc = season.thumbnail ? `/thumbnails/${season.thumbnail}` : null;
+            const thumbnailHTML = thumbnailSrc 
+              ? `<img src="${thumbnailSrc}" alt="Season ${season.number}" style="width: 80px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 15px;">` 
+              : '';
+            return `
+              <li class="season-item" onclick="router.navigate('/tv/${show.id}/season/${season.number}')">
+                <div style="display: flex; align-items: center;">
+                  ${thumbnailHTML}
+                  <div>
+                    <strong>Season ${season.number}</strong>
+                    <span style="color: #888; margin-left: 15px;">${season.episodes.length} episodes</span>
+                  </div>
+                </div>
+                <span>→</span>
+              </li>
+            `;
+          }).join('')}
         </ul>
       </div>
     </div>
@@ -348,14 +367,23 @@ router.addRoute('/tv/:showId/season/:seasonNum', async (params) => {
       <div class="detail-view">
         <h2>${show.name} - Season ${season.number}</h2>
         <ul class="episode-list">
-          ${season.episodes.map(episode => `
-            <li class="episode-item" onclick="playEpisode('${episode.id}')">
-              <div>
-                <strong>Episode ${episode.number}: ${episode.title}</strong>
-              </div>
-              <span>▶</span>
-            </li>
-          `).join('')}
+          ${season.episodes.map(episode => {
+            const thumbnailSrc = episode.thumbnail ? `/thumbnails/${episode.thumbnail}` : null;
+            const thumbnailHTML = thumbnailSrc 
+              ? `<img src="${thumbnailSrc}" alt="Episode ${episode.number}" style="width: 120px; height: 68px; object-fit: cover; border-radius: 4px; margin-right: 15px;">` 
+              : '';
+            return `
+              <li class="episode-item" onclick="playEpisode('${episode.id}')">
+                <div style="display: flex; align-items: center;">
+                  ${thumbnailHTML}
+                  <div>
+                    <strong>Episode ${episode.number}: ${episode.title}</strong>
+                  </div>
+                </div>
+                <span>▶</span>
+              </li>
+            `;
+          }).join('')}
         </ul>
         <div id="playerContainer"></div>
       </div>
@@ -414,15 +442,21 @@ router.addRoute('/music', async () => {
     return;
   }
   
-  grid.innerHTML = albums.map(album => `
-    <div class="card" onclick="router.navigate('/album/${album.id}')">
-      <div class="card-image">🎵</div>
-      <div class="card-content">
-        <div class="card-title">${album.album}</div>
-        <div class="card-subtitle">${album.artist}</div>
+  grid.innerHTML = albums.map(album => {
+    const thumbnailSrc = album.thumbnail ? `/thumbnails/${album.thumbnail}` : null;
+    const imageContent = thumbnailSrc 
+      ? `<img src="${thumbnailSrc}" alt="${album.album}" style="width: 100%; height: 100%; object-fit: cover;">` 
+      : '🎵';
+    return `
+      <div class="card" onclick="router.navigate('/album/${album.id}')">
+        <div class="card-image">${imageContent}</div>
+        <div class="card-content">
+          <div class="card-title">${album.album}</div>
+          <div class="card-subtitle">${album.artist}</div>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 });
 
 // Album detail
@@ -440,7 +474,7 @@ router.addRoute('/album/:id', async (params) => {
       <a href="/music" class="back-btn" onclick="route(event, '/music')">← Back to Music</a>
       <div class="detail-view">
         <div class="album-header">
-          <div class="album-cover">🎵</div>
+          <div class="album-cover">${album.thumbnail ? `<img src="/thumbnails/${album.thumbnail}" alt="${album.album}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">` : '🎵'}</div>
           <div class="album-info">
             <h2>${album.album}</h2>
             <h3>${album.artist}</h3>

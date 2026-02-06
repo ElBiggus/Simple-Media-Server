@@ -107,11 +107,13 @@ ipcMain.handle('get-server-status', async () => {
   };
 });
 
-ipcMain.handle('scan-media', async (event, type) => {
+ipcMain.handle('scan-media', async (event, type, createThumbnails = false) => {
   try {
-    await mediaServer.scanMedia(type);
+    console.log(`[Main] Scan request received: type=${type}, createThumbnails=${createThumbnails}`);
+    await mediaServer.scanMedia(type, createThumbnails);
     return { success: true };
   } catch (error) {
+    console.error('[Main] Scan error:', error);
     return { success: false, error: error.message };
   }
 });
