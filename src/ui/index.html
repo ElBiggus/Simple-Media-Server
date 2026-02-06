@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Media Server</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      color: #4a9eff;
+    }
+
+    h2 {
+      margin: 30px 0 15px;
+      color: #7ab8ff;
+      font-size: 1.3em;
+    }
+
+    .section {
+      background: #252525;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #aaa;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 200px;
+      padding: 8px 12px;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #4a9eff;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #3a8eef;
+    }
+
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #555;
+    }
+
+    button.secondary:hover {
+      background: #666;
+    }
+
+    button.danger {
+      background: #e74c3c;
+    }
+
+    button.danger:hover {
+      background: #c0392b;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-left: 15px;
+    }
+
+    .status.running {
+      background: #27ae60;
+    }
+
+    .status.stopped {
+      background: #e74c3c;
+    }
+
+    .folder-list {
+      list-style: none;
+      margin-top: 10px;
+    }
+
+    .folder-item {
+      background: #1a1a1a;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .folder-item span {
+      flex: 1;
+      word-break: break-all;
+    }
+
+    .folder-item button {
+      margin: 0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      background: #333;
+      border: none;
+      border-radius: 4px 4px 0 0;
+      color: #aaa;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: #252525;
+      color: #4a9eff;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .media-item {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .media-item:hover {
+      background: #2a2a2a;
+    }
+
+    .media-item h4 {
+      margin-bottom: 5px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .media-item p {
+      color: #888;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .media-item input {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .media-item button {
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+
+    .link {
+      color: #4a9eff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Simple Media Server</h1>
+
+    <div class="section">
+      <h2>Server Configuration</h2>
+      <div class="form-group">
+        <label for="port">Web Server Port:</label>
+        <input type="number" id="port" min="1024" max="65535" value="3000">
+        <button id="startServer">Start Server</button>
+        <button id="stopServer" class="danger">Stop Server</button>
+        <span id="serverStatus" class="status stopped">Stopped</span>
+      </div>
+      <div id="webLink" style="display: none;">
+        <a id="webLinkAnchor" class="link" target="_blank">Open Web Interface</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Media Folders</h2>
+      <div class="tabs">
+        <button class="tab active" data-tab="movies">Movies</button>
+        <button class="tab" data-tab="tv">TV Shows</button>
+        <button class="tab" data-tab="music">Music</button>
+      </div>
+
+      <div id="movies-folders" class="tab-content active">
+        <button id="addMovieFolder">Add Movies Folder</button>
+        <button id="scanMovies" class="secondary">Scan Movies</button>
+        <ul id="movieFolderList" class="folder-list"></ul>
+      </div>
+
+      <div id="tv-folders" class="tab-content">
+        <button id="addTVFolder">Add TV Shows Folder</button>
+        <button id="scanTV" class="secondary">Scan TV Shows</button>
+        <ul id="tvFolderList" class="folder-list"></ul>
+      </div>
+
+      <div id="music-folders" class="tab-content">
+        <button id="addMusicFolder">Add Music Folder</button>
+        <button id="scanMusic" class="secondary">Scan Music</button>
+        <ul id="musicFolderList" class="folder-list"></ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Media Library</h2>
+      <div class="tabs">
+        <button class="tab active" data-tab="movies-lib">Movies</button>
+        <button class="tab" data-tab="tv-lib">TV Shows</button>
+        <button class="tab" data-tab="music-lib">Music</button>
+      </div>
+
+      <div id="movies-lib" class="tab-content active">
+        <div id="moviesLibrary" class="media-grid"></div>
+      </div>
+
+      <div id="tv-lib" class="tab-content">
+        <div id="tvLibrary" class="media-grid"></div>
+      </div>
+
+      <div id="music-lib" class="tab-content">
+        <div id="musicLibrary" class="media-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    console.log('Script starting...');
+    
+    const { ipcRenderer } = require('electron');
+    console.log('ipcRenderer loaded:', ipcRenderer);
+
+    let config = null;
+
+    // Initialize
+    async function init() {
+      try {
+        console.log('Initializing...');
+        config = await ipcRenderer.invoke('get-config');
+        console.log('Config loaded:', config);
+        document.getElementById('port').value = config.port;
+        
+        loadFolders();
+        loadLibrary();
+        updateServerStatus();
+        
+        // Set up event listeners
+        console.log('Setting up event listeners...');
+        setupEventListeners();
+        console.log('Initialization complete!');
+      } catch (error) {
+        console.error('Error initializing:', error);
+      }
+    }
+
+    function setupEventListeners() {
+      console.log('Adding event listeners to buttons...');
+      
+      // Server controls
+      const startBtn = document.getElementById('startServer');
+      const stopBtn = document.getElementById('stopServer');
+      console.log('Start button:', startBtn);
+      console.log('Stop button:', stopBtn);
+      
+      startBtn.addEventListener('click', startServer);
+      stopBtn.addEventListener('click', stopServer);
+      
+      // Add folder buttons
+      document.getElementById('addMovieFolder').addEventListener('click', () => addFolder('movies'));
+      document.getElementById('addTVFolder').addEventListener('click', () => addFolder('tv'));
+      document.getElementById('addMusicFolder').addEventListener('click', () => addFolder('music'));
+      
+      // Scan buttons
+      document.getElementById('scanMovies').addEventListener('click', () => scanMedia('movies'));
+      document.getElementById('scanTV').addEventListener('click', () => scanMedia('tv'));
+      document.getElementById('scanMusic').addEventListener('click', () => scanMedia('music'));
+      
+      // Tab switching
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          const tabGroup = this.parentElement;
+          const tabName = this.dataset.tab;
+          
+          // Update active tab
+          tabGroup.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Find and show the correct tab content
+          let sibling = tabGroup.nextElementSibling;
+          const tabContents = [];
+          
+          while (sibling) {
+            if (sibling.classList && sibling.classList.contains('tab-content')) {
+              tabContents.push(sibling);
+            }
+            if (sibling.classList && sibling.classList.contains('section')) {
+              break;
+            }
+            sibling = sibling.nextElementSibling;
+          }
+          
+          // Show the correct content
+          tabContents.forEach(content => {
+            if (content.id === tabName || content.id === `${tabName}-folders`) {
+              content.classList.add('active');
+            } else {
+              content.classList.remove('active');
+            }
+          });
+        });
+      });
+    }
+
+    async function startServer() {
+      const port = parseInt(document.getElementById('port').value);
+      const result = await ipcRenderer.invoke('start-server', port);
+      
+      if (result.success) {
+        updateServerStatus();
+      } else {
+        alert(`Failed to start server: ${result.error}`);
+      }
+    }
+
+    async function stopServer() {
+      const result = await ipcRenderer.invoke('stop-server');
+      if (result.success) {
+        updateServerStatus();
+      }
+    }
+
+    async function updateServerStatus() {
+      const status = await ipcRenderer.invoke('get-server-status');
+      const statusEl = document.getElementById('serverStatus');
+      const webLink = document.getElementById('webLink');
+      const webLinkAnchor = document.getElementById('webLinkAnchor');
+      
+      if (status.running) {
+        statusEl.textContent = `Running on port ${status.port}`;
+        statusEl.className = 'status running';
+        webLinkAnchor.href = `http://localhost:${status.port}`;
+        webLink.style.display = 'block';
+        document.getElementById('startServer').disabled = true;
+        document.getElementById('stopServer').disabled = false;
+      } else {
+        statusEl.textContent = 'Stopped';
+        statusEl.className = 'status stopped';
+        webLink.style.display = 'none';
+        document.getElementById('startServer').disabled = false;
+        document.getElementById('stopServer').disabled = true;
+      }
+    }
+
+    async function addFolder(type) {
+      const folder = await ipcRenderer.invoke('select-folder');
+      if (folder) {
+        await ipcRenderer.invoke('add-media-folder', type, folder);
+        config = await ipcRenderer.invoke('get-config');
+        loadFolders();
+      }
+    }
+
+    async function removeFolder(type, folder) {
+      await ipcRenderer.invoke('remove-media-folder', type, folder);
+      config = await ipcRenderer.invoke('get-config');
+      loadFolders();
+    }
+
+    function loadFolders() {
+      console.log('Loading folders...');
+      ['movies', 'tv', 'music'].forEach(type => {
+        const listId = type === 'movies' ? 'movieFolderList' : type === 'tv' ? 'tvFolderList' : 'musicFolderList';
+        const list = document.getElementById(listId);
+        
+        if (!list) {
+          console.error(`Element not found: ${listId}`);
+          return;
+        }
+        
+        list.innerHTML = '';
+        
+        const folders = config.mediaFolders[type] || [];
+        folders.forEach(folder => {
+          const li = document.createElement('li');
+          li.className = 'folder-item';
+          li.innerHTML = `
+            <span>${folder}</span>
+            <button class="danger" onclick="removeFolder('${type}', '${folder.replace(/\\/g, '\\\\')}')">Remove</button>
+          `;
+          list.appendChild(li);
+        });
+      });
+    }
+
+    async function scanMedia(type) {
+      const button = event.target;
+      button.disabled = true;
+      button.textContent = 'Scanning...';
+      
+      const result = await ipcRenderer.invoke('scan-media', type);
+      
+      button.disabled = false;
+      button.textContent = `Scan ${type === 'tv' ? 'TV Shows' : type.charAt(0).toUpperCase() + type.slice(1)}`;
+      
+      if (result.success) {
+        loadLibrary();
+      } else {
+        alert(`Failed to scan ${type}: ${result.error}`);
+      }
+    }
+
+    async function loadLibrary() {
+      await loadMovies();
+      await loadTV();
+      await loadMusic();
+    }
+
+    async function loadMovies() {
+      const movies = await ipcRenderer.invoke('get-media-library', 'movies');
+      const container = document.getElementById('moviesLibrary');
+      
+      if (!container) {
+        console.error('moviesLibrary container not found');
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      if (movies.length === 0) {
+        container.innerHTML = '<p style="color: #888;">No movies found. Add folders and scan to get started.</p>';
+        return;
+      }
+      
+      movies.forEach(movie => {
+        const div = document.createElement('div');
+        div.className = 'media-item';
+        div.innerHTML = `
+          <h4>${movie.title}${movie.year ? ` (${movie.year})` : ''}</h4>
+          <p>${movie.originalFileName}</p>
+          <input type="text" value="${movie.title}" id="movie-${movie.id}">
+          <button onclick="updateMovie('${movie.id}')">Update Title</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function loadTV() {
+      const shows = await ipcRenderer.invoke('get-media-library', 'tv');
+      const container = document.getElementById('tvLibrary');
+      
+      if (!container) {
+        console.error('tvLibrary container not found');
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      if (shows.length === 0) {
+        container.innerHTML = '<p style="color: #888;">No TV shows found. Add folders and scan to get started.</p>';
+        return;
+      }
+      
+      shows.forEach(show => {
+        const episodeCount = show.seasons.reduce((sum, s) => sum + s.episodes.length, 0);
+        const div = document.createElement('div');
+        div.className = 'media-item';
+        div.innerHTML = `
+          <h4>${show.name}</h4>
+          <p>${show.seasons.length} seasons, ${episodeCount} episodes</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function loadMusic() {
+      const albums = await ipcRenderer.invoke('get-media-library', 'music');
+      const container = document.getElementById('musicLibrary');
+      
+      if (!container) {
+        console.error('musicLibrary container not found');
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      if (albums.length === 0) {
+        container.innerHTML = '<p style="color: #888;">No music found. Add folders and scan to get started.</p>';
+        return;
+      }
+      
+      albums.forEach(album => {
+        const div = document.createElement('div');
+        div.className = 'media-item';
+        div.innerHTML = `
+          <h4>${album.album}</h4>
+          <p>${album.artist}</p>
+          <p>${album.tracks.length} tracks${album.year ? ` • ${album.year}` : ''}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function updateMovie(id) {
+      const newTitle = document.getElementById(`movie-${id}`).value;
+      await ipcRenderer.invoke('update-media-item', 'movies', id, { title: newTitle });
+      loadMovies();
+    }
+
+    // Make functions global for onclick handlers
+    window.removeFolder = removeFolder;
+    window.updateMovie = updateMovie;
+
+    // Initialize only when DOM is fully loaded
+    if (document.readyState === 'loading') {
+      console.log('Waiting for DOMContentLoaded...');
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOMContentLoaded fired, initializing...');
+        init();
+      });
+    } else {
+      console.log('DOM already loaded, initializing immediately...');
+      // DOM is already loaded, wait a tick to ensure everything is rendered
+      setTimeout(init, 0);
+    }
+  </script>
+</body>
+</html>
