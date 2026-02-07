@@ -373,7 +373,7 @@ router.addRoute('/tv/:showId/season/:seasonNum', async (params) => {
               ? `<img src="${thumbnailSrc}" alt="Episode ${episode.number}" style="width: 120px; height: 68px; object-fit: cover; border-radius: 4px; margin-right: 15px;">` 
               : '';
             return `
-              <li class="episode-item" onclick="playEpisode('${episode.id}')">
+              <li class="episode-item" id="episode-${episode.id}" onclick="playEpisode('${episode.id}')">
                 <div style="display: flex; align-items: center;">
                   ${thumbnailHTML}
                   <div>
@@ -385,20 +385,34 @@ router.addRoute('/tv/:showId/season/:seasonNum', async (params) => {
             `;
           }).join('')}
         </ul>
-        <div id="playerContainer"></div>
       </div>
     </div>
   `;
 });
 
 async function playEpisode(id) {
-  const container = document.getElementById('playerContainer');
-  container.innerHTML = `
-    <video id="videoPlayer" controls autoplay>
+  // Remove any existing player
+  const existingPlayer = document.getElementById('episodePlayerContainer');
+  if (existingPlayer) {
+    existingPlayer.remove();
+  }
+  
+  // Create player container
+  const playerContainer = document.createElement('div');
+  playerContainer.id = 'episodePlayerContainer';
+  playerContainer.style.cssText = 'margin: 15px 0; padding: 0;';
+  playerContainer.innerHTML = `
+    <video id="videoPlayer" controls autoplay style="width: 100%; border-radius: 8px;">
       <source src="/media/tv/${id}" type="video/mp4">
       Your browser does not support the video tag.
     </video>
   `;
+  
+  // Insert the player directly after the clicked episode
+  const episodeItem = document.getElementById(`episode-${id}`);
+  if (episodeItem) {
+    episodeItem.after(playerContainer);
+  }
   
   const video = document.getElementById('videoPlayer');
   
